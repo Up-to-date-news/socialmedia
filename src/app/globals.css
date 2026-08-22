@@ -1,0 +1,94 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Design tokens approximating Claude.ai's visual language: warm cream/charcoal
+  neutrals (not pure white/black), a terracotta accent, soft rounded surfaces,
+  low-contrast borders instead of hard lines. Anthropic's actual typefaces are
+  proprietary, so `next/font` self-hosts Inter as a close neutral stand-in.
+*/
+
+:root {
+  --bg: 250 249 245;
+  --bg-elevated: 255 255 255;
+  --bg-inset: 244 243 238;
+  --border: 228 226 217;
+  --border-strong: 209 206 195;
+  --ink: 31 30 29;
+  --ink-muted: 92 89 84;
+  --ink-faint: 143 139 131;
+  --accent: 217 119 87;
+  --accent-hover: 199 100 68;
+  --accent-ink: 255 255 255;
+  --accent-soft: 250 231 222;
+  --success: 61 130 92;
+  --success-soft: 224 240 230;
+  --warning: 176 108 34;
+  --warning-soft: 245 228 202;
+  --danger: 189 68 58;
+  --danger-soft: 248 224 220;
+}
+
+.dark {
+  --bg: 38 36 36;
+  --bg-elevated: 48 48 46;
+  --bg-inset: 32 30 29;
+  --border: 64 61 58;
+  --border-strong: 82 78 74;
+  --ink: 237 235 230;
+  --ink-muted: 168 163 155;
+  --ink-faint: 118 113 106;
+  --accent: 224 130 98;
+  --accent-hover: 235 150 120;
+  --accent-ink: 33 22 18;
+  --accent-soft: 74 46 36;
+  --success: 122 178 140;
+  --success-soft: 40 54 45;
+  --warning: 214 165 96;
+  --warning-soft: 58 48 34;
+  --danger: 224 122 110;
+  --danger-soft: 58 36 33;
+}
+
+* {
+  border-color: rgb(var(--border));
+}
+
+html {
+  color-scheme: light;
+}
+html.dark {
+  color-scheme: dark;
+}
+
+body {
+  background-color: rgb(var(--bg));
+  color: rgb(var(--ink));
+}
+
+::selection {
+  background-color: rgb(var(--accent-soft));
+  color: rgb(var(--ink));
+}
+
+/* Slim, unobtrusive scrollbars that still fit the warm palette */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgb(var(--border-strong));
+  border-radius: 9999px;
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
