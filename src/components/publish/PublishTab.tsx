@@ -10,6 +10,7 @@ interface PublishTabProps {
   onContentChange: (v: string) => void;
   image: string;
   onImageChange: (v: string) => void;
+  onFileSelected: (file: File | null) => void;
   selectedPlatforms: PlatformId[];
   onTogglePlatform: (id: PlatformId) => void;
   onToggleAllPlatforms: () => void;

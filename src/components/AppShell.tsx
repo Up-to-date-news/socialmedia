@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ActiveTab, DateRange, Platform, PlatformId, Post, ThemeMode } from "@/lib/types";
-import { INITIAL_PLATFORMS, INITIAL_POSTS } from "@/lib/mock-data";
 import { useToast } from "@/lib/toast-context";
+import { api } from "@/lib/api-client";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileNav } from "@/components/layout/MobileNav";
 import { Header } from "@/components/layout/Header";
@@ -14,34 +14,30 @@ import { HistoryTab } from "@/components/history/HistoryTab";
 import { DeleteModal } from "@/components/history/DeleteModal";
 import { StatsModal } from "@/components/history/StatsModal";
 import { ApiVaultTab } from "@/components/auth/ApiVaultTab";
+import { LoginScreen } from "@/components/auth/LoginScreen";
 
-const SAMPLE_TITLES = [
-  "Multi-Cloud Architecture Trends 2026",
-  "Machine Learning Pipelines in Production",
-  "Design Systems: Micro-Interactions & UX Mastery",
-  "Q3 Product Roadmap & Feature Reveal",
-];
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80";
+
+type AuthState = "loading" | "authenticated" | "unauthenticated";
 
 export function AppShell() {
   const { showToast } = useToast();
 
+  const [authState, setAuthState] = useState<AuthState>("loading");
+  const [userEmail, setUserEmail] = useState("");
+
   const [theme, setTheme] = useState<ThemeMode>("light");
   const [activeTab, setActiveTab] = useState<ActiveTab>("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authenticated, setAuthenticated] = useState(true);
-  const [user] = useState({ name: "Alex Rivera", email: "alex@omnisocial.io" });
 
-  const [platforms, setPlatforms] = useState<Platform[]>(INITIAL_PLATFORMS);
-  const [posts, setPosts] = useState<Post[]>(INITIAL_POSTS);
+  const [platforms, setPlatforms] = useState<Platform[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   const [postTitle, setPostTitle] = useState("");
   const [postContent, setPostContent] = useState("");
-  const [selectedImage, setSelectedImage] = useState(
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80"
-  );
-  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>(
-    INITIAL_PLATFORMS.map((p) => p.id)
-  );
+  const [selectedImage, setSelectedImage] = useState(DEFAULT_IMAGE);
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+  const [selectedPlatforms, setSelectedPlatforms] = useState<PlatformId[]>([]);
   const [previewPlatform, setPreviewPlatform] = useState<PlatformId>("telegram");
   const [isPublishing, setIsPublishing] = useState(false);
 
@@ -57,13 +53,59 @@ export function AppShell() {
     document.documentElement.classList.toggle("dark", theme === "dark");
   }, [theme]);
 
+  const loadPlatforms = async (resetSelection = false) => {
+    const { platforms: data } = await api.platforms();
+    setPlatforms(data);
+    if (resetSelection) setSelectedPlatforms(data.map((p) => p.id));
+  };
+
+  const loadPosts = async () => {
+    const { posts: data } = await api.posts();
+    setPosts(data);
+  };
+
+  useEffect(() => {
+    api
+      .session()
+      .then(async (session) => {
+        if (session.authenticated && session.email) {
+          setUserEmail(session.email);
+          setAuthState("authenticated");
+          await Promise.all([loadPlatforms(true), loadPosts()]);
+        } else {
+          setAuthState("unauthenticated");
+        }
+      })
+      .catch(() => setAuthState("unauthenticated"));
+  }, []);
+
+  const handleLoginSuccess = async (email: string) => {
+    setUserEmail(email);
+    setAuthState("authenticated");
+    try {
+      await Promise.all([loadPlatforms(true), loadPosts()]);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
+  };
+
+  const handleLogout = async () => {
+    await api.logout().catch(() => {});
+    setAuthState("unauthenticated");
+    setPosts([]);
+    setPlatforms([]);
+    setActiveTab("dashboard");
+  };
+
   const aggregatedStats = useMemo(() => {
-    const totalReach = platforms.reduce((acc, p) => acc + p.followers, 0);
-    const totalPostsCount = posts.length + platforms.reduce((acc, p) => acc + p.posts, 0);
-    const totalEngagements =
-      platforms.reduce((acc, p) => acc + p.engagements, 0) +
-      posts.reduce((acc, p) => acc + p.metrics.likes + p.metrics.comments + p.metrics.shares, 0);
-    return { totalReach, totalPostsCount, totalEngagements, peakTime: "18:30 UTC" };
+    const totalPosts = posts.length;
+    const totalEngagements = posts.reduce(
+      (acc, p) => acc + p.metrics.likes + p.metrics.comments + p.metrics.shares,
+      0
+    );
+    const connectedCount = platforms.filter((p) => p.connected).length;
+    const lastPublished = posts[0] ? new Date(posts[0].created_at).toLocaleDateString() : "No posts yet";
+    return { totalPosts, totalEngagements, connectedCount, lastPublished };
   }, [platforms, posts]);
 
   const filteredPosts = useMemo(() => {
@@ -110,92 +152,85 @@ export function AppShell() {
     }
 
     setIsPublishing(true);
+    try {
+      let imageUrl: string | undefined = selectedImage || undefined;
+      if (selectedImageFile) {
+        const uploaded = await api.upload(selectedImageFile);
+        imageUrl = uploaded.url;
+      }
 
-    const newPlatformStatuses: Post["platforms"] = {};
-    for (const id of selectedPlatforms) {
-      await new Promise((r) => setTimeout(r, 150 + Math.random() * 250));
-      const isSuccess = Math.random() > 0.05;
-      newPlatformStatuses[id] = isSuccess
-        ? { status: "SUCCESS", platform_post_id: `${id.slice(0, 2)}_${Math.floor(Math.random() * 899 + 100)}` }
-        : { status: "FAILED", error: "API Timeout / Auth token refresh required" };
+      const { post } = await api.createPost({
+        title: postTitle,
+        content: postContent,
+        imageUrl,
+        platformIds: selectedPlatforms,
+      });
+
+      setPosts((prev) => [post, ...prev]);
+      setPostTitle("");
+      setPostContent("");
+      setSelectedImageFile(null);
+
+      const toneByStatus = { SUCCESS: "success", PARTIAL: "warning", FAILED: "error" } as const;
+      showToast(
+        post.status === "SUCCESS"
+          ? "Post published across selected platforms successfully!"
+          : `Post published with status: ${post.status}. Check Stats for per-platform errors.`,
+        toneByStatus[post.status]
+      );
+      await loadPlatforms();
+      setActiveTab("history");
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setIsPublishing(false);
     }
-
-    const values = Object.values(newPlatformStatuses);
-    const overallStatus = values.every((s) => s.status === "SUCCESS")
-      ? "SUCCESS"
-      : values.some((s) => s.status === "SUCCESS")
-      ? "PARTIAL"
-      : "FAILED";
-
-    const newPost: Post = {
-      post_id: `post-${Date.now()}`,
-      title: postTitle,
-      content: postContent,
-      image: selectedImage,
-      created_at: new Date().toISOString(),
-      status: overallStatus,
-      platforms: newPlatformStatuses,
-      metrics: { likes: 0, comments: 0, shares: 0 },
-    };
-
-    setPosts((prev) => [newPost, ...prev]);
-    setPlatforms((prev) =>
-      prev.map((p) =>
-        selectedPlatforms.includes(p.id) && newPlatformStatuses[p.id]?.status === "SUCCESS"
-          ? { ...p, posts: p.posts + 1 }
-          : p
-      )
-    );
-
-    setIsPublishing(false);
-    setPostTitle("");
-    setPostContent("");
-    showToast("Post published across selected platforms successfully!", "success");
-    setActiveTab("history");
   };
 
-  const handleAddMockPost = () => {
-    const randomTitle = SAMPLE_TITLES[Math.floor(Math.random() * SAMPLE_TITLES.length)];
-    const mockPost: Post = {
-      post_id: `post-${Date.now()}`,
-      title: randomTitle,
-      content:
-        "A comprehensive dive into scalable infrastructure, cloud latency reduction, and modern software design patterns.",
-      image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80",
-      created_at: new Date().toISOString(),
-      status: "SUCCESS",
-      platforms: platforms.reduce((acc, p) => {
-        acc[p.id] = { status: "SUCCESS", platform_post_id: `${p.id}_mock_${Math.floor(Math.random() * 100)}` };
-        return acc;
-      }, {} as Post["platforms"]),
-      metrics: {
-        likes: Math.floor(Math.random() * 500) + 50,
-        comments: Math.floor(Math.random() * 80),
-        shares: Math.floor(Math.random() * 40),
-      },
-    };
-    setPosts((prev) => [mockPost, ...prev]);
-    showToast("Mock sample post injected into History feed!", "success");
-  };
-
-  const confirmDeletePost = () => {
+  const confirmDeletePost = async () => {
     if (!deleteModalPost) return;
-    setPosts((prev) => prev.filter((p) => p.post_id !== deleteModalPost.post_id));
-    const restrictedPlatforms = platforms
-      .filter((p) => !p.directDelete && deleteModalPost.platforms[p.id]?.status === "SUCCESS")
-      .map((p) => p.name);
-    if (restrictedPlatforms.length > 0) {
-      showToast(`Deleted via native APIs! ${restrictedPlatforms.join(", ")} required manual removal.`, "warning");
-    } else {
-      showToast("Successfully purged post across connected platform APIs!", "success");
+    const postId = deleteModalPost.post_id;
+    try {
+      const result = await api.deletePost(postId);
+      setPosts((prev) => prev.filter((p) => p.post_id !== postId));
+      if (result.restrictedPlatforms.length > 0) {
+        showToast(
+          `Deleted via native APIs! ${result.restrictedPlatforms.join(", ")} require manual removal.`,
+          "warning"
+        );
+      } else {
+        showToast("Successfully purged post across connected platform APIs!", "success");
+      }
+      await loadPlatforms();
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    } finally {
+      setDeleteModalPost(null);
     }
-    setDeleteModalPost(null);
+  };
+
+  const handleRefreshStats = async (postId: string) => {
+    try {
+      const { post } = await api.refreshStats(postId);
+      setPosts((prev) => prev.map((p) => (p.post_id === postId ? post : p)));
+      setStatsModalPost(post);
+    } catch (err) {
+      showToast((err as Error).message, "error");
+    }
   };
 
   const navigateTab = (tab: ActiveTab) => {
     setActiveTab(tab);
     setMobileMenuOpen(false);
   };
+
+  if (authState === "loading") {
+    return <div className="min-h-screen bg-bg" />;
+  }
+
+  if (authState === "unauthenticated") {
+    return <LoginScreen onSuccess={handleLoginSuccess} />;
+  }
 
   return (
     <div className="min-h-screen bg-bg text-ink">
@@ -207,7 +242,6 @@ export function AppShell() {
         onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         open={mobileMenuOpen}
         onOpenChange={setMobileMenuOpen}
-        onInjectSample={handleAddMockPost}
       />
 
       <div className="flex h-screen sm:h-screen overflow-hidden">
@@ -217,13 +251,16 @@ export function AppShell() {
           postCount={posts.length}
           theme={theme}
           onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-          userName={user.name}
-          userRole="Administrator"
-          onInjectSample={handleAddMockPost}
+          userEmail={userEmail}
         />
 
         <main className="flex-1 flex flex-col overflow-y-auto">
-          <Header activeTab={activeTab} onNewPost={() => setActiveTab("create")} platformCount={platforms.length} />
+          <Header
+            activeTab={activeTab}
+            onNewPost={() => setActiveTab("create")}
+            connectedCount={aggregatedStats.connectedCount}
+            totalCount={platforms.length}
+          />
 
           <div className="p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-6 sm:space-y-8">
             <h2 className="sm:hidden text-lg font-bold text-ink">{TAB_HEADINGS[activeTab]}</h2>
@@ -247,7 +284,11 @@ export function AppShell() {
                 content={postContent}
                 onContentChange={setPostContent}
                 image={selectedImage}
-                onImageChange={setSelectedImage}
+                onImageChange={(v) => {
+                  setSelectedImage(v);
+                  if (!v) setSelectedImageFile(null);
+                }}
+                onFileSelected={setSelectedImageFile}
                 selectedPlatforms={selectedPlatforms}
                 onTogglePlatform={togglePlatform}
                 onToggleAllPlatforms={toggleAllPlatforms}
@@ -286,13 +327,10 @@ export function AppShell() {
             {activeTab === "auth" && (
               <ApiVaultTab
                 platforms={platforms}
-                authenticated={authenticated}
-                onToggleSession={() => {
-                  setAuthenticated((a) => !a);
-                  showToast(authenticated ? "Logged out session" : "Re-authenticated successfully", "info");
-                }}
-                userName={user.name}
-                userEmail={user.email}
+                userEmail={userEmail}
+                onLogout={handleLogout}
+                onCredentialsChanged={() => loadPlatforms()}
+                onError={(message) => showToast(message, "error")}
               />
             )}
           </div>
@@ -309,7 +347,12 @@ export function AppShell() {
       )}
 
       {statsModalPost && (
-        <StatsModal post={statsModalPost} platforms={platforms} onClose={() => setStatsModalPost(null)} />
+        <StatsModal
+          post={statsModalPost}
+          platforms={platforms}
+          onClose={() => setStatsModalPost(null)}
+          onRefresh={handleRefreshStats}
+        />
       )}
     </div>
   );

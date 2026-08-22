@@ -2,7 +2,7 @@
 
 import { ActiveTab, ThemeMode } from "@/lib/types";
 import { NAV_ITEMS } from "./nav-items";
-import { IconGrid, IconEdit, IconClock, IconShield, IconSun, IconMoon, IconSparkle } from "@/components/icons";
+import { IconGrid, IconEdit, IconClock, IconShield, IconSun, IconMoon } from "@/components/icons";
 
 const ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
   dashboard: IconGrid,
@@ -17,21 +17,12 @@ interface SidebarProps {
   postCount: number;
   theme: ThemeMode;
   onToggleTheme: () => void;
-  userName: string;
-  userRole: string;
-  onInjectSample: () => void;
+  userEmail: string;
 }
 
-export function Sidebar({
-  activeTab,
-  onTabChange,
-  postCount,
-  theme,
-  onToggleTheme,
-  userName,
-  userRole,
-  onInjectSample,
-}: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, postCount, theme, onToggleTheme, userEmail }: SidebarProps) {
+  const initial = userEmail.charAt(0).toUpperCase();
+
   return (
     <aside className="hidden sm:flex w-64 bg-bg-elevated border-r border-border flex-col justify-between p-4 shrink-0">
       <div>
@@ -73,32 +64,21 @@ export function Sidebar({
         </nav>
       </div>
 
-      <div className="space-y-3 pt-4 border-t border-border">
-        <button
-          onClick={onInjectSample}
-          className="w-full py-2 px-3 rounded-xl border border-border hover:border-border-strong bg-bg-inset/60 hover:bg-bg-inset text-xs text-ink-muted font-medium flex items-center justify-center gap-2 transition-colors"
-        >
-          <IconSparkle />
-          <span>Inject Test Post Data</span>
-        </button>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent to-accent-hover flex items-center justify-center font-bold text-xs text-accent-ink">
-              {userName
-                .split(" ")
-                .map((n) => n[0])
-                .join("")}
+      <div className="pt-4 border-t border-border">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-accent to-accent-hover flex items-center justify-center font-bold text-xs text-accent-ink shrink-0">
+              {initial}
             </div>
-            <div className="flex flex-col">
-              <span className="text-xs font-semibold text-ink leading-tight">{userName}</span>
-              <span className="text-[10px] text-ink-faint">{userRole}</span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-ink leading-tight truncate">{userEmail}</span>
+              <span className="text-[10px] text-ink-faint">Administrator</span>
             </div>
           </div>
 
           <button
             onClick={onToggleTheme}
-            className="p-2 rounded-lg bg-bg-inset text-ink-muted hover:text-ink hover:bg-border transition-colors"
+            className="p-2 rounded-lg bg-bg-inset text-ink-muted hover:text-ink hover:bg-border transition-colors shrink-0"
             title="Toggle Theme"
           >
             {theme === "dark" ? <IconSun /> : <IconMoon />}

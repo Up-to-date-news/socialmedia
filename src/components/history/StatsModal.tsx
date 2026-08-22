@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Platform, Post } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { IconX } from "@/components/icons";
@@ -6,9 +9,21 @@ interface StatsModalProps {
   post: Post;
   platforms: Platform[];
   onClose: () => void;
+  onRefresh: (postId: string) => Promise<void>;
 }
 
-export function StatsModal({ post, platforms, onClose }: StatsModalProps) {
+export function StatsModal({ post, platforms, onClose, onRefresh }: StatsModalProps) {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await onRefresh(post.post_id);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-bg-elevated border border-border rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-5 shadow-popover">
@@ -55,9 +70,14 @@ export function StatsModal({ post, platforms, onClose }: StatsModalProps) {
           </div>
         </div>
 
-        <Button variant="secondary" onClick={onClose} className="w-full">
-          Close Breakdown
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="secondary" onClick={handleRefresh} disabled={refreshing} className="flex-1">
+            {refreshing ? "Refreshing…" : "Refresh Stats"}
+          </Button>
+          <Button variant="secondary" onClick={onClose} className="flex-1">
+            Close
+          </Button>
+        </div>
       </div>
     </div>
   );

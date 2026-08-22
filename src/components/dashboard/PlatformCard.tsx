@@ -1,5 +1,6 @@
 import { Platform } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 
 interface PlatformCardProps {
   platform: Platform;
@@ -17,10 +18,9 @@ export function PlatformCard({ platform, onPostHere }: PlatformCardProps) {
             </span>
             <div>
               <h4 className="font-bold text-ink text-xs sm:text-sm leading-snug">{platform.name}</h4>
-              <span className="text-[10px] text-success flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                <span>{platform.status}</span>
-              </span>
+              <Badge tone={platform.connected ? "success" : "neutral"} className="mt-0.5">
+                {platform.connected ? "Connected" : "Not Connected"}
+              </Badge>
             </div>
           </div>
 
@@ -34,20 +34,12 @@ export function PlatformCard({ platform, onPostHere }: PlatformCardProps) {
 
         <div className="grid grid-cols-2 gap-2 my-2 py-2 border-y border-border/70 text-xs">
           <div>
-            <span className="text-[10px] text-ink-faint block">{platform.metricLabel}</span>
-            <span className="font-bold text-ink">{platform.followers.toLocaleString()}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-ink-faint block">Total Posts</span>
-            <span className="font-bold text-ink">{platform.posts.toLocaleString()}</span>
+            <span className="text-[10px] text-ink-faint block">Posts Published</span>
+            <span className="font-bold text-ink">{platform.postsCount.toLocaleString()}</span>
           </div>
           <div>
             <span className="text-[10px] text-ink-faint block">Engagements</span>
             <span className="font-bold text-ink">{platform.engagements.toLocaleString()}</span>
-          </div>
-          <div>
-            <span className="text-[10px] text-ink-faint block">Peak Window</span>
-            <span className="font-bold text-accent">{platform.peakTime}</span>
           </div>
         </div>
       </div>

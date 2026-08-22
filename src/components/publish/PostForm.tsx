@@ -16,6 +16,7 @@ interface PostFormProps {
   onContentChange: (v: string) => void;
   image: string;
   onImageChange: (v: string) => void;
+  onFileSelected: (file: File | null) => void;
   selectedPlatforms: PlatformId[];
   onTogglePlatform: (id: PlatformId) => void;
   onToggleAllPlatforms: () => void;
@@ -32,6 +33,7 @@ export function PostForm({
   onContentChange,
   image,
   onImageChange,
+  onFileSelected,
   selectedPlatforms,
   onTogglePlatform,
   onToggleAllPlatforms,
@@ -42,6 +44,7 @@ export function PostForm({
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    onFileSelected(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       if (typeof reader.result === "string") onImageChange(reader.result);
@@ -97,7 +100,10 @@ export function PostForm({
           <div className="mt-3 relative w-28 h-20 rounded-xl overflow-hidden border border-border group">
             <Image src={image} alt="Attachment" fill className="object-cover" unoptimized />
             <button
-              onClick={() => onImageChange("")}
+              onClick={() => {
+                onImageChange("");
+                onFileSelected(null);
+              }}
               className="absolute top-1 right-1 p-1 rounded-full bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
             >
               <IconX className="w-3 h-3" />

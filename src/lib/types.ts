@@ -34,18 +34,27 @@ export interface Post {
   metrics: PostMetrics;
 }
 
+export interface CredentialField {
+  key: string;
+  label: string;
+  type: "text" | "password";
+  placeholder?: string;
+}
+
+// Shape returned by GET /api/platforms — real connection status and
+// counts derived from the database, not mock numbers.
 export interface Platform {
   id: PlatformId;
   name: string;
   icon: string;
-  followers: number;
-  posts: number;
-  engagements: number;
-  peakTime: string;
-  status: "Connected" | "Disconnected";
+  metricLabel: string;
   directUpload: boolean;
   directDelete: boolean;
-  metricLabel: string;
+  credentialFields: CredentialField[];
+  connected: boolean;
+  updatedAt: string | null;
+  postsCount: number;
+  engagements: number;
 }
 
 export type ThemeMode = "light" | "dark";

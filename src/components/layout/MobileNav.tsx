@@ -2,7 +2,7 @@
 
 import { ActiveTab, ThemeMode } from "@/lib/types";
 import { NAV_ITEMS } from "./nav-items";
-import { IconGrid, IconEdit, IconClock, IconShield, IconMenu, IconX, IconSun, IconMoon, IconSparkle } from "@/components/icons";
+import { IconGrid, IconEdit, IconClock, IconShield, IconMenu, IconX, IconSun, IconMoon } from "@/components/icons";
 
 const ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
   dashboard: IconGrid,
@@ -19,7 +19,6 @@ interface MobileNavProps {
   onToggleTheme: () => void;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onInjectSample: () => void;
 }
 
 export function MobileNav({
@@ -30,7 +29,6 @@ export function MobileNav({
   onToggleTheme,
   open,
   onOpenChange,
-  onInjectSample,
 }: MobileNavProps) {
   return (
     <>
@@ -94,17 +92,6 @@ export function MobileNav({
               );
             })}
           </nav>
-
-          <button
-            onClick={() => {
-              onInjectSample();
-              onOpenChange(false);
-            }}
-            className="w-full py-2.5 px-3 rounded-xl border border-border bg-bg-elevated text-xs text-ink-muted font-medium flex items-center justify-center gap-2"
-          >
-            <IconSparkle />
-            <span>Inject Sample Post</span>
-          </button>
         </div>
       )}
     </>
