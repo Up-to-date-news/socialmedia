@@ -109,3 +109,36 @@ export function IconSearch(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
+
+export function IconCalendar(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" {...base} {...props}>
+      <rect x="3" y="5" width="18" height="16" rx="2.5" />
+      <path d="M8 3v4M16 3v4M3 10h18" />
+    </svg>
+  );
+}
+
+export function IconChevronDown(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" {...base} {...props}>
+      <path d="m6 9 6 6 6-6" />
+    </svg>
+  );
+}
+
+export function IconChevronLeft(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+      <path d="m15 18-6-6 6-6" />
+    </svg>
+  );
+}
+
+export function IconChevronRight(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" width="16" height="16" {...base} {...props}>
+      <path d="m9 18 6-6-6-6" />
+    </svg>
+  );
+}

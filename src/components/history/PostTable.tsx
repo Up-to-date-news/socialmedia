@@ -1,16 +1,20 @@
 import Image from "next/image";
 import { Platform, Post } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { PlatformIcon } from "@/components/platform-icons";
+import { IconClock } from "@/components/icons";
 
 interface PostTableProps {
   posts: Post[];
   platforms: Platform[];
   onShowStats: (post: Post) => void;
   onDelete: (post: Post) => void;
+  onPublishNow: (post: Post) => void;
   onResetFilters: () => void;
 }
 
-export function PostTable({ posts, platforms, onShowStats, onDelete, onResetFilters }: PostTableProps) {
+export function PostTable({ posts, platforms, onShowStats, onDelete, onPublishNow, onResetFilters }: PostTableProps) {
   if (posts.length === 0) {
     return (
       <div className="hidden sm:block rounded-2xl bg-bg-elevated border border-border overflow-hidden shadow-card">
@@ -58,8 +62,15 @@ export function PostTable({ posts, platforms, onShowStats, onDelete, onResetFilt
                   </div>
                 </td>
 
-                <td className="py-3.5 px-4 text-ink-faint font-mono text-[11px] whitespace-nowrap">
-                  {new Date(post.created_at).toLocaleDateString()}
+                <td className="py-3.5 px-4 font-mono text-[11px] whitespace-nowrap">
+                  {post.status === "SCHEDULED" && post.scheduled_at ? (
+                    <span className="flex items-center gap-1.5 text-accent">
+                      <IconClock className="w-3.5 h-3.5" />
+                      {new Date(post.scheduled_at).toLocaleString()}
+                    </span>
+                  ) : (
+                    <span className="text-ink-faint">{new Date(post.created_at).toLocaleDateString()}</span>
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4">
@@ -71,13 +82,15 @@ export function PostTable({ posts, platforms, onShowStats, onDelete, onResetFilt
                         <span
                           key={p.id}
                           title={`${p.name}: ${pState.status}`}
-                          className={`px-1.5 py-0.5 rounded text-[10px] border ${
+                          className={`p-1 rounded border flex items-center justify-center ${
                             pState.status === "SUCCESS"
                               ? "bg-success-soft border-success/30 text-success"
-                              : "bg-danger-soft border-danger/30 text-danger"
+                              : pState.status === "PENDING"
+                                ? "bg-bg-inset border-border text-ink-faint"
+                                : "bg-danger-soft border-danger/30 text-danger"
                           }`}
                         >
-                          {p.icon}
+                          <PlatformIcon id={p.id} className="w-3 h-3" />
                         </span>
                       );
                     })}
@@ -85,20 +98,37 @@ export function PostTable({ posts, platforms, onShowStats, onDelete, onResetFilt
                 </td>
 
                 <td className="py-3.5 px-4 whitespace-nowrap">
-                  <div className="flex items-center gap-2 text-ink-muted font-mono text-[11px]">
-                    <span>♥ {post.metrics.likes}</span>
-                    <span>💬 {post.metrics.comments}</span>
-                  </div>
+                  {post.status === "SCHEDULED" ? (
+                    <Badge tone="accent">Awaiting Publish</Badge>
+                  ) : (
+                    <div className="flex items-center gap-2 text-ink-muted font-mono text-[11px]">
+                      <span>♥ {post.metrics.likes}</span>
+                      <span>💬 {post.metrics.comments}</span>
+                    </div>
+                  )}
                 </td>
 
                 <td className="py-3.5 px-4 text-right whitespace-nowrap">
                   <div className="flex items-center justify-end gap-1.5">
-                    <Button size="sm" variant="secondary" onClick={() => onShowStats(post)}>
-                      Stats
-                    </Button>
-                    <Button size="sm" variant="danger" onClick={() => onDelete(post)}>
-                      Delete
-                    </Button>
+                    {post.status === "SCHEDULED" ? (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => onPublishNow(post)}>
+                          Publish Now
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => onDelete(post)}>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button size="sm" variant="secondary" onClick={() => onShowStats(post)}>
+                          Stats
+                        </Button>
+                        <Button size="sm" variant="danger" onClick={() => onDelete(post)}>
+                          Delete
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

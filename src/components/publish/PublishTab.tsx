@@ -16,7 +16,7 @@ interface PublishTabProps {
   onToggleAllPlatforms: () => void;
   isPublishing: boolean;
   onPublish: () => void;
-  onSchedule: () => void;
+  onSchedule: (isoDateTime: string) => Promise<void>;
   previewPlatform: PlatformId;
   onPreviewPlatformChange: (id: PlatformId) => void;
 }

@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { IconShield } from "@/components/icons";
+import { PlatformIcon } from "@/components/platform-icons";
 import { ConfigureCredentialsModal } from "./ConfigureCredentialsModal";
 import { api } from "@/lib/api-client";
 
@@ -73,7 +74,7 @@ export function ApiVaultTab({ platforms, userEmail, onLogout, onCredentialsChang
           {platforms.map((p) => (
             <div key={p.id} className="flex items-center justify-between p-3 rounded-xl bg-bg-inset border border-border">
               <div className="flex items-center gap-2.5">
-                <span className="text-lg">{p.icon}</span>
+                <PlatformIcon id={p.id} className="w-5 h-5 text-ink-muted" />
                 <span className="text-xs font-medium text-ink">{p.name}</span>
               </div>
               <div className="flex items-center gap-2">

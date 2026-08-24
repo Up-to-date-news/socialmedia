@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Platform, Post } from "@/lib/types";
 import { Button } from "@/components/ui/Button";
 import { IconX } from "@/components/icons";
+import { PlatformIcon } from "@/components/platform-icons";
 
 interface StatsModalProps {
   post: Post;
@@ -58,7 +59,7 @@ export function StatsModal({ post, platforms, onClose, onRefresh }: StatsModalPr
               return (
                 <div key={p.id} className="flex justify-between items-center p-2 rounded bg-bg-inset border border-border">
                   <span className="flex items-center gap-2">
-                    <span>{p.icon}</span>
+                    <PlatformIcon id={p.id} className="w-4 h-4 text-ink-muted" />
                     <span className="text-ink font-medium text-xs">{p.name}</span>
                   </span>
                   <span className={`font-mono text-[10px] ${status.status === "SUCCESS" ? "text-success" : "text-danger"}`}>

@@ -1,5 +1,8 @@
+import { useRef } from "react";
 import { Platform, PlatformId } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
+import { IconChevronLeft, IconChevronRight } from "@/components/icons";
+import { PlatformIcon } from "@/components/platform-icons";
 import Image from "next/image";
 
 interface LivePreviewProps {
@@ -19,6 +22,12 @@ export function LivePreview({
   content,
   image,
 }: LivePreviewProps) {
+  const scrollerRef = useRef<HTMLDivElement>(null);
+
+  const scrollByAmount = (dir: -1 | 1) => {
+    scrollerRef.current?.scrollBy({ left: dir * 160, behavior: "smooth" });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -26,21 +35,41 @@ export function LivePreview({
         <span className="text-[11px] text-ink-faint font-mono">Mock Mode</span>
       </div>
 
-      <div className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-        {platforms.map((p) => (
-          <button
-            key={p.id}
-            onClick={() => onPreviewPlatformChange(p.id)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 shrink-0 transition-colors ${
-              previewPlatform === p.id
-                ? "bg-bg-inset text-ink border border-border-strong"
-                : "text-ink-faint hover:bg-bg-inset/60"
-            }`}
-          >
-            <span>{p.icon}</span>
-            <span>{p.name}</span>
-          </button>
-        ))}
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => scrollByAmount(-1)}
+          aria-label="Scroll platforms left"
+          className="shrink-0 p-1.5 rounded-lg text-ink-faint hover:text-ink hover:bg-bg-inset transition-colors"
+        >
+          <IconChevronLeft />
+        </button>
+
+        <div ref={scrollerRef} className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-none scroll-smooth">
+          {platforms.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onPreviewPlatformChange(p.id)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-1.5 shrink-0 transition-colors ${
+                previewPlatform === p.id
+                  ? "bg-bg-inset text-ink border border-border-strong"
+                  : "text-ink-faint hover:bg-bg-inset/60"
+              }`}
+            >
+              <PlatformIcon id={p.id} className="w-4 h-4 shrink-0" />
+              <span>{p.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => scrollByAmount(1)}
+          aria-label="Scroll platforms right"
+          className="shrink-0 p-1.5 rounded-lg text-ink-faint hover:text-ink hover:bg-bg-inset transition-colors"
+        >
+          <IconChevronRight />
+        </button>
       </div>
 
       <Card className="p-4 sm:p-5 min-h-[350px] flex flex-col justify-between">

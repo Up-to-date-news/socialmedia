@@ -11,6 +11,7 @@ import { TAB_HEADINGS } from "@/components/layout/nav-items";
 import { DashboardTab } from "@/components/dashboard/DashboardTab";
 import { PublishTab } from "@/components/publish/PublishTab";
 import { HistoryTab } from "@/components/history/HistoryTab";
+import { ScheduledTab } from "@/components/scheduled/ScheduledTab";
 import { DeleteModal } from "@/components/history/DeleteModal";
 import { StatsModal } from "@/components/history/StatsModal";
 import { ApiVaultTab } from "@/components/auth/ApiVaultTab";
@@ -45,6 +46,8 @@ export function AppShell() {
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<DateRange>("ALL");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
 
   const [deleteModalPost, setDeleteModalPost] = useState<Post | null>(null);
   const [statsModalPost, setStatsModalPost] = useState<Post | null>(null);
@@ -79,6 +82,17 @@ export function AppShell() {
       .catch(() => setAuthState("unauthenticated"));
   }, []);
 
+  useEffect(() => {
+    if (authState !== "authenticated") return;
+    // GET /api/posts opportunistically fires any SCHEDULED post whose time
+    // has passed, so polling it keeps the Scheduled Posts view (and Dashboard
+    // counts) in sync without a manual refresh once a post goes live.
+    const interval = setInterval(() => {
+      loadPosts().catch(() => {});
+    }, 20000);
+    return () => clearInterval(interval);
+  }, [authState]);
+
   const handleLoginSuccess = async (email: string) => {
     setUserEmail(email);
     setAuthState("authenticated");
@@ -96,6 +110,8 @@ export function AppShell() {
     setPlatforms([]);
     setActiveTab("dashboard");
   };
+
+  const scheduledCount = useMemo(() => posts.filter((p) => p.status === "SCHEDULED").length, [posts]);
 
   const aggregatedStats = useMemo(() => {
     const totalPosts = posts.length;
@@ -129,9 +145,21 @@ export function AppShell() {
         if (dateRange === "WEEK" && diffDays > 7) return false;
         if (dateRange === "MONTH" && diffDays > 30) return false;
       }
+      if (customFrom) {
+        const postDate = new Date(post.created_at);
+        const from = new Date(customFrom);
+        from.setHours(0, 0, 0, 0);
+        if (postDate < from) return false;
+      }
+      if (customTo) {
+        const postDate = new Date(post.created_at);
+        const to = new Date(customTo);
+        to.setHours(23, 59, 59, 999);
+        if (postDate > to) return false;
+      }
       return true;
     });
-  }, [posts, platformFilter, statusFilter, searchQuery, dateRange]);
+  }, [posts, platformFilter, statusFilter, searchQuery, dateRange, customFrom, customTo]);
 
   const toggleAllPlatforms = () => {
     setSelectedPlatforms((prev) => (prev.length === platforms.length ? [] : platforms.map((p) => p.id)));
@@ -141,7 +169,7 @@ export function AppShell() {
     setSelectedPlatforms((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
   };
 
-  const handlePublishNow = async () => {
+  const handlePublishNow = async (scheduledAt?: string) => {
     if (!postTitle.trim() || !postContent.trim()) {
       showToast("Please provide both a Title and Content body.", "error");
       return;
@@ -164,6 +192,7 @@ export function AppShell() {
         content: postContent,
         imageUrl,
         platformIds: selectedPlatforms,
+        scheduledAt,
       });
 
       setPosts((prev) => [post, ...prev]);
@@ -171,19 +200,37 @@ export function AppShell() {
       setPostContent("");
       setSelectedImageFile(null);
 
-      const toneByStatus = { SUCCESS: "success", PARTIAL: "warning", FAILED: "error" } as const;
-      showToast(
-        post.status === "SUCCESS"
-          ? "Post published across selected platforms successfully!"
-          : `Post published with status: ${post.status}. Check Stats for per-platform errors.`,
-        toneByStatus[post.status]
-      );
+      if (post.status === "SCHEDULED") {
+        showToast(`Post scheduled for ${new Date(post.scheduled_at!).toLocaleString()}.`, "success");
+      } else {
+        const toneByStatus = { SUCCESS: "success", PARTIAL: "warning", FAILED: "error" } as const;
+        showToast(
+          post.status === "SUCCESS"
+            ? "Post published across selected platforms successfully!"
+            : `Post published with status: ${post.status}. Check Stats for per-platform errors.`,
+          toneByStatus[post.status]
+        );
+      }
       await loadPlatforms();
       setActiveTab("history");
     } catch (err) {
       showToast((err as Error).message, "error");
     } finally {
       setIsPublishing(false);
+    }
+  };
+
+  const handlePublishScheduledNow = async (post: Post) => {
+    try {
+      const { post: updated } = await api.publishScheduledNow(post.post_id);
+      setPosts((prev) => prev.map((p) => (p.post_id === updated.post_id ? updated : p)));
+      showToast(
+        updated.status === "SUCCESS" ? "Post published early!" : `Published with status: ${updated.status}.`,
+        updated.status === "SUCCESS" ? "success" : "warning"
+      );
+      await loadPlatforms();
+    } catch (err) {
+      showToast((err as Error).message, "error");
     }
   };
 
@@ -238,6 +285,7 @@ export function AppShell() {
         activeTab={activeTab}
         onTabChange={navigateTab}
         postCount={posts.length}
+        scheduledCount={scheduledCount}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
         open={mobileMenuOpen}
@@ -249,6 +297,7 @@ export function AppShell() {
           activeTab={activeTab}
           onTabChange={setActiveTab}
           postCount={posts.length}
+          scheduledCount={scheduledCount}
           theme={theme}
           onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
           userEmail={userEmail}
@@ -293,10 +342,20 @@ export function AppShell() {
                 onTogglePlatform={togglePlatform}
                 onToggleAllPlatforms={toggleAllPlatforms}
                 isPublishing={isPublishing}
-                onPublish={handlePublishNow}
-                onSchedule={() => showToast("Scheduling engine: Post set for peak window 18:30 UTC", "info")}
+                onPublish={() => handlePublishNow()}
+                onSchedule={handlePublishNow}
                 previewPlatform={previewPlatform}
                 onPreviewPlatformChange={setPreviewPlatform}
+              />
+            )}
+
+            {activeTab === "scheduled" && (
+              <ScheduledTab
+                posts={posts}
+                platforms={platforms}
+                onPublishNow={handlePublishScheduledNow}
+                onCancel={setDeleteModalPost}
+                onCreateNew={() => setActiveTab("create")}
               />
             )}
 
@@ -312,14 +371,31 @@ export function AppShell() {
                 statusFilter={statusFilter}
                 onStatusFilterChange={setStatusFilter}
                 dateRange={dateRange}
-                onDateRangeChange={setDateRange}
+                onDateRangeChange={(v) => {
+                  setDateRange(v);
+                  setCustomFrom("");
+                  setCustomTo("");
+                }}
+                customFrom={customFrom}
+                customTo={customTo}
+                onCustomFromChange={(v) => {
+                  setCustomFrom(v);
+                  setDateRange("ALL");
+                }}
+                onCustomToChange={(v) => {
+                  setCustomTo(v);
+                  setDateRange("ALL");
+                }}
                 onShowStats={setStatsModalPost}
                 onDelete={setDeleteModalPost}
+                onPublishNow={handlePublishScheduledNow}
                 onResetFilters={() => {
                   setPlatformFilter("ALL");
                   setStatusFilter("ALL");
                   setSearchQuery("");
                   setDateRange("ALL");
+                  setCustomFrom("");
+                  setCustomTo("");
                 }}
               />
             )}

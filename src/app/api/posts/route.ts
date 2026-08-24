@@ -3,11 +3,15 @@ import { randomUUID } from "node:crypto";
 import { requireSession } from "@/lib/auth/session";
 import { pool } from "@/lib/db";
 import { PlatformId } from "@/lib/types";
-import { POST_COLUMNS, computeOverallStatus, publishToPlatforms, rowToPost } from "@/lib/posts";
+import { POST_COLUMNS, computeOverallStatus, publishDuePosts, publishToPlatforms, rowToPost } from "@/lib/posts";
 
 export async function GET(request: Request) {
   const session = await requireSession();
   if (session instanceof NextResponse) return session;
+
+  // Opportunistically fire any SCHEDULED posts whose time has passed. This
+  // covers normal usage (Dashboard/History load) between Vercel Cron ticks.
+  await publishDuePosts();
 
   const { searchParams } = new URL(request.url);
   const platform = searchParams.get("platform");
@@ -54,6 +58,7 @@ export async function POST(request: Request) {
   const content = body?.content;
   const imageUrl = body?.imageUrl as string | undefined;
   const platformIds = body?.platformIds as PlatformId[] | undefined;
+  const scheduledAt = body?.scheduledAt as string | undefined;
 
   if (typeof title !== "string" || !title.trim() || typeof content !== "string" || !content.trim()) {
     return NextResponse.json({ error: "Title and content are required" }, { status: 400 });
@@ -62,10 +67,26 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Select at least one platform" }, { status: 400 });
   }
 
-  const platforms = await publishToPlatforms({ title, content, imageUrl }, platformIds);
-  const status = computeOverallStatus(platforms);
   const postId = `post-${randomUUID()}`;
   const metrics = { likes: 0, comments: 0, shares: 0 };
+
+  if (scheduledAt) {
+    const when = new Date(scheduledAt);
+    if (Number.isNaN(when.getTime()) || when.getTime() <= Date.now()) {
+      return NextResponse.json({ error: "Scheduled time must be in the future" }, { status: 400 });
+    }
+    const pendingPlatforms = Object.fromEntries(platformIds.map((id) => [id, { status: "PENDING" as const }]));
+    const { rows } = await pool.query(
+      `insert into posts (post_id, title, content, image_url, status, scheduled_at, platforms, metrics)
+       values ($1, $2, $3, $4, 'SCHEDULED', $5, $6, $7)
+       returning ${POST_COLUMNS}`,
+      [postId, title, content, imageUrl ?? null, when.toISOString(), JSON.stringify(pendingPlatforms), JSON.stringify(metrics)]
+    );
+    return NextResponse.json({ post: rowToPost(rows[0]) });
+  }
+
+  const platforms = await publishToPlatforms({ title, content, imageUrl }, platformIds);
+  const status = computeOverallStatus(platforms);
 
   const { rows } = await pool.query(
     `insert into posts (post_id, title, content, image_url, status, platforms, metrics)

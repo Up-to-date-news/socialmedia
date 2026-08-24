@@ -14,7 +14,7 @@ interface HeaderProps {
 
 export function Header({ activeTab, onNewPost, connectedCount, totalCount }: HeaderProps) {
   return (
-    <header className="hidden sm:flex h-16 border-b border-border px-6 lg:px-8 items-center justify-between sticky top-0 bg-bg/80 backdrop-blur-md z-20">
+    <header className="hidden sm:flex border-b border-border px-6 lg:px-8 py-5 items-center justify-between sticky top-0 bg-bg/80 backdrop-blur-md z-20">
       <h2 className="text-base lg:text-lg font-bold tracking-tight text-ink">
         {TAB_HEADINGS[activeTab]}
       </h2>

@@ -2,11 +2,22 @@
 
 import { ActiveTab, ThemeMode } from "@/lib/types";
 import { NAV_ITEMS } from "./nav-items";
-import { IconGrid, IconEdit, IconClock, IconShield, IconMenu, IconX, IconSun, IconMoon } from "@/components/icons";
+import {
+  IconGrid,
+  IconEdit,
+  IconClock,
+  IconCalendar,
+  IconShield,
+  IconMenu,
+  IconX,
+  IconSun,
+  IconMoon,
+} from "@/components/icons";
 
 const ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
   dashboard: IconGrid,
   create: IconEdit,
+  scheduled: IconCalendar,
   history: IconClock,
   auth: IconShield,
 };
@@ -15,6 +26,7 @@ interface MobileNavProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   postCount: number;
+  scheduledCount: number;
   theme: ThemeMode;
   onToggleTheme: () => void;
   open: boolean;
@@ -25,6 +37,7 @@ export function MobileNav({
   activeTab,
   onTabChange,
   postCount,
+  scheduledCount,
   theme,
   onToggleTheme,
   open,
@@ -86,6 +99,15 @@ export function MobileNav({
                       }`}
                     >
                       {postCount}
+                    </span>
+                  )}
+                  {item.tab === "scheduled" && scheduledCount > 0 && (
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full ${
+                        isActive ? "bg-accent-ink/20" : "bg-accent-soft text-accent border border-accent/30"
+                      }`}
+                    >
+                      {scheduledCount}
                     </span>
                   )}
                 </button>

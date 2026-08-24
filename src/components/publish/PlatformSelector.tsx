@@ -1,4 +1,5 @@
 import { Platform, PlatformId } from "@/lib/types";
+import { PlatformIcon } from "@/components/platform-icons";
 
 interface PlatformSelectorProps {
   platforms: Platform[];
@@ -42,7 +43,7 @@ export function PlatformSelector({ platforms, selected, onToggle, onToggleAll }:
               >
                 {isSelected ? "✓" : ""}
               </div>
-              <span className="text-sm">{p.icon}</span>
+              <PlatformIcon id={p.id} className="w-4 h-4 shrink-0" />
               <span className="text-xs font-medium truncate">{p.name}</span>
             </button>
           );

@@ -29,7 +29,8 @@ export interface Post {
   content: string;
   image?: string;
   created_at: string;
-  status: "SUCCESS" | "PARTIAL" | "FAILED";
+  status: "SUCCESS" | "PARTIAL" | "FAILED" | "SCHEDULED";
+  scheduled_at?: string;
   platforms: Partial<Record<PlatformId, PlatformResult>>;
   metrics: PostMetrics;
 }
@@ -58,5 +59,5 @@ export interface Platform {
 }
 
 export type ThemeMode = "light" | "dark";
-export type ActiveTab = "dashboard" | "create" | "history" | "auth";
+export type ActiveTab = "dashboard" | "create" | "scheduled" | "history" | "auth";
 export type DateRange = "ALL" | "TODAY" | "WEEK" | "MONTH";

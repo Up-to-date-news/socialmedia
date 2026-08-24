@@ -1,5 +1,6 @@
 import { DateRange, Platform } from "@/lib/types";
-import { Input, Select } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Field";
+import { Listbox } from "@/components/ui/Listbox";
 import { IconSearch } from "@/components/icons";
 
 interface FilterBarProps {
@@ -12,6 +13,10 @@ interface FilterBarProps {
   onStatusFilterChange: (v: string) => void;
   dateRange: DateRange;
   onDateRangeChange: (v: DateRange) => void;
+  customFrom: string;
+  customTo: string;
+  onCustomFromChange: (v: string) => void;
+  onCustomToChange: (v: string) => void;
   filteredCount: number;
   totalCount: number;
 }
@@ -28,6 +33,10 @@ export function FilterBar({
   onStatusFilterChange,
   dateRange,
   onDateRangeChange,
+  customFrom,
+  customTo,
+  onCustomFromChange,
+  onCustomToChange,
   filteredCount,
   totalCount,
 }: FilterBarProps) {
@@ -47,34 +56,63 @@ export function FilterBar({
           </span>
         </div>
 
-        <Select value={platformFilter} onChange={(e) => onPlatformFilterChange(e.target.value)} className="py-2 w-auto">
-          <option value="ALL">All Platforms</option>
-          {platforms.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </Select>
+        <Listbox
+          value={platformFilter}
+          onChange={onPlatformFilterChange}
+          ariaLabel="Filter by platform"
+          className="w-auto min-w-[9.5rem]"
+          options={[
+            { value: "ALL", label: "All Platforms" },
+            ...platforms.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+        />
 
-        <Select value={statusFilter} onChange={(e) => onStatusFilterChange(e.target.value)} className="py-2 w-auto">
-          <option value="ALL">All Statuses</option>
-          <option value="SUCCESS">Published Successfully</option>
-          <option value="PARTIAL">Partially Published</option>
-          <option value="FAILED">Failed</option>
-        </Select>
+        <Listbox
+          value={statusFilter}
+          onChange={onStatusFilterChange}
+          ariaLabel="Filter by status"
+          className="w-auto min-w-[10.5rem]"
+          options={[
+            { value: "ALL", label: "All Statuses" },
+            { value: "SUCCESS", label: "Published Successfully" },
+            { value: "PARTIAL", label: "Partially Published" },
+            { value: "FAILED", label: "Failed" },
+            { value: "SCHEDULED", label: "Scheduled" },
+          ]}
+        />
 
-        <div className="flex bg-bg-inset border border-border p-1 rounded-xl gap-1 justify-between">
+        <div className="grid grid-cols-4 bg-bg-inset border border-border p-1 rounded-xl gap-1">
           {DATE_RANGES.map((range) => (
             <button
               key={range}
               onClick={() => onDateRangeChange(range)}
-              className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-colors ${
-                dateRange === range ? "bg-bg-elevated text-ink shadow-soft" : "text-ink-faint hover:text-ink"
+              className={`px-2 py-1 rounded-lg text-[10px] font-semibold text-center transition-colors ${
+                dateRange === range && !customFrom && !customTo
+                  ? "bg-bg-elevated text-ink shadow-soft"
+                  : "text-ink-faint hover:text-ink"
               }`}
             >
               {range}
             </button>
           ))}
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          <Input
+            type="date"
+            value={customFrom}
+            onChange={(e) => onCustomFromChange(e.target.value)}
+            aria-label="From date"
+            className="py-2 w-auto text-xs"
+          />
+          <span className="text-ink-faint text-xs">–</span>
+          <Input
+            type="date"
+            value={customTo}
+            onChange={(e) => onCustomToChange(e.target.value)}
+            aria-label="To date"
+            className="py-2 w-auto text-xs"
+          />
         </div>
       </div>
 

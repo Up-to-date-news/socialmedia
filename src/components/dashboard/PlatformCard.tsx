@@ -1,6 +1,7 @@
 import { Platform } from "@/lib/types";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { PlatformIcon } from "@/components/platform-icons";
 
 interface PlatformCardProps {
   platform: Platform;
@@ -13,8 +14,8 @@ export function PlatformCard({ platform, onPostHere }: PlatformCardProps) {
       <div>
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <span className="text-xl sm:text-2xl p-2 rounded-xl bg-bg-inset border border-border">
-              {platform.icon}
+            <span className="p-2 rounded-xl bg-bg-inset border border-border text-ink">
+              <PlatformIcon id={platform.id} className="w-5 h-5 sm:w-6 sm:h-6" />
             </span>
             <div>
               <h4 className="font-bold text-ink text-xs sm:text-sm leading-snug">{platform.name}</h4>

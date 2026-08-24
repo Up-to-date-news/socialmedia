@@ -2,11 +2,12 @@
 
 import { ActiveTab, ThemeMode } from "@/lib/types";
 import { NAV_ITEMS } from "./nav-items";
-import { IconGrid, IconEdit, IconClock, IconShield, IconSun, IconMoon } from "@/components/icons";
+import { IconGrid, IconEdit, IconClock, IconCalendar, IconShield, IconSun, IconMoon } from "@/components/icons";
 
 const ICONS: Record<string, (props: { className?: string }) => JSX.Element> = {
   dashboard: IconGrid,
   create: IconEdit,
+  scheduled: IconCalendar,
   history: IconClock,
   auth: IconShield,
 };
@@ -15,12 +16,21 @@ interface SidebarProps {
   activeTab: ActiveTab;
   onTabChange: (tab: ActiveTab) => void;
   postCount: number;
+  scheduledCount: number;
   theme: ThemeMode;
   onToggleTheme: () => void;
   userEmail: string;
 }
 
-export function Sidebar({ activeTab, onTabChange, postCount, theme, onToggleTheme, userEmail }: SidebarProps) {
+export function Sidebar({
+  activeTab,
+  onTabChange,
+  postCount,
+  scheduledCount,
+  theme,
+  onToggleTheme,
+  userEmail,
+}: SidebarProps) {
   const initial = userEmail.charAt(0).toUpperCase();
 
   return (
@@ -56,6 +66,11 @@ export function Sidebar({ activeTab, onTabChange, postCount, theme, onToggleThem
                 {item.tab === "history" && postCount > 0 && (
                   <span className="ml-auto bg-bg-inset text-ink-muted text-xs px-2 py-0.5 rounded-full border border-border">
                     {postCount}
+                  </span>
+                )}
+                {item.tab === "scheduled" && scheduledCount > 0 && (
+                  <span className="ml-auto bg-accent-soft text-accent text-xs px-2 py-0.5 rounded-full border border-accent/30">
+                    {scheduledCount}
                   </span>
                 )}
               </button>

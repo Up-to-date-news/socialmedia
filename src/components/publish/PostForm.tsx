@@ -1,10 +1,11 @@
 "use client";
 
-import { ChangeEvent } from "react";
+import { ChangeEvent, useState } from "react";
 import { Platform, PlatformId } from "@/lib/types";
 import { Label, Input, Textarea } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { PlatformSelector } from "./PlatformSelector";
+import { ScheduleModal } from "./ScheduleModal";
 import { IconUpload, IconX } from "@/components/icons";
 import Image from "next/image";
 
@@ -22,7 +23,7 @@ interface PostFormProps {
   onToggleAllPlatforms: () => void;
   isPublishing: boolean;
   onPublish: () => void;
-  onSchedule: () => void;
+  onSchedule: (isoDateTime: string) => Promise<void>;
 }
 
 export function PostForm({
@@ -41,6 +42,8 @@ export function PostForm({
   onPublish,
   onSchedule,
 }: PostFormProps) {
+  const [scheduleOpen, setScheduleOpen] = useState(false);
+
   const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -123,10 +126,20 @@ export function PostForm({
         <Button onClick={onPublish} disabled={isPublishing} className="flex-1">
           {isPublishing ? "Publishing…" : "Publish Now"}
         </Button>
-        <Button variant="secondary" onClick={onSchedule}>
+        <Button variant="secondary" onClick={() => setScheduleOpen(true)}>
           Schedule
         </Button>
       </div>
+
+      {scheduleOpen && (
+        <ScheduleModal
+          onClose={() => setScheduleOpen(false)}
+          onConfirm={async (iso) => {
+            await onSchedule(iso);
+            setScheduleOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

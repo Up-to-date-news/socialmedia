@@ -30,7 +30,13 @@ export const api = {
     request<{ ok: true }>(`/api/platforms/${platformId}/credentials`, { method: "DELETE" }),
 
   posts: () => request<{ posts: Post[] }>("/api/posts"),
-  createPost: (input: { title: string; content: string; imageUrl?: string; platformIds: string[] }) =>
+  createPost: (input: {
+    title: string;
+    content: string;
+    imageUrl?: string;
+    platformIds: string[];
+    scheduledAt?: string;
+  }) =>
     request<{ post: Post }>("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,6 +47,7 @@ export const api = {
       method: "DELETE",
     }),
   refreshStats: (postId: string) => request<{ post: Post }>(`/api/posts/${postId}/stats`),
+  publishScheduledNow: (postId: string) => request<{ post: Post }>(`/api/posts/${postId}/publish`, { method: "POST" }),
 
   upload: async (file: File): Promise<{ url: string }> => {
     const form = new FormData();
