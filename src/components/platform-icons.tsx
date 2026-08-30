@@ -92,6 +92,14 @@ function MastodonGlyph(props: SVGProps<SVGSVGElement>) {
   );
 }
 
+function TwitterGlyph(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" {...stroke} {...props}>
+      <path d="M4.5 4.5 19.5 19.5M19.5 4.5 4.5 19.5" />
+    </svg>
+  );
+}
+
 const GLYPHS: Record<PlatformId, ComponentType<SVGProps<SVGSVGElement>>> = {
   telegram: TelegramGlyph,
   discord: DiscordGlyph,
@@ -101,6 +109,7 @@ const GLYPHS: Record<PlatformId, ComponentType<SVGProps<SVGSVGElement>>> = {
   bluesky: BlueskyGlyph,
   threads: ThreadsGlyph,
   mastodon: MastodonGlyph,
+  twitter: TwitterGlyph,
 };
 
 interface PlatformIconProps extends SVGProps<SVGSVGElement> {

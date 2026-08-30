@@ -6,7 +6,8 @@ export type PlatformId =
   | "reddit"
   | "bluesky"
   | "threads"
-  | "mastodon";
+  | "mastodon"
+  | "twitter";
 
 export type PlatformResultStatus = "SUCCESS" | "FAILED" | "PENDING";
 

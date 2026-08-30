@@ -8,6 +8,7 @@ import { redditAdapter } from "./reddit";
 import { blueskyAdapter } from "./bluesky";
 import { threadsAdapter } from "./threads";
 import { mastodonAdapter } from "./mastodon";
+import { twitterAdapter } from "./twitter";
 
 export const PLATFORM_ADAPTERS: Record<PlatformId, PlatformAdapter<any>> = {
   telegram: telegramAdapter,
@@ -18,6 +19,7 @@ export const PLATFORM_ADAPTERS: Record<PlatformId, PlatformAdapter<any>> = {
   bluesky: blueskyAdapter,
   threads: threadsAdapter,
   mastodon: mastodonAdapter,
+  twitter: twitterAdapter,
 };
 
 export function getAdapter(id: PlatformId): PlatformAdapter<any> {

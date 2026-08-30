@@ -104,6 +104,23 @@ export const PLATFORM_REGISTRY: PlatformDefinition[] = [
       { key: "accessToken", label: "Access Token", type: "password" },
     ],
   },
+  {
+    id: "twitter",
+    name: "Twitter",
+    icon: "𝕏",
+    metricLabel: "Followers",
+    directUpload: true,
+    directDelete: true,
+    // OAuth 1.0a user-context credentials from the X Developer Portal (App
+    // must have Read+Write permission). No live OAuth redirect flow needed —
+    // these 4 static values are enough to sign requests as your own account.
+    credentialFields: [
+      { key: "apiKey", label: "API Key", type: "password" },
+      { key: "apiKeySecret", label: "API Key Secret", type: "password" },
+      { key: "accessToken", label: "Access Token", type: "password" },
+      { key: "accessTokenSecret", label: "Access Token Secret", type: "password" },
+    ],
+  },
 ];
 
 export function getPlatformDefinition(id: string): PlatformDefinition | undefined {
